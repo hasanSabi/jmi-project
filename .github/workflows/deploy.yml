@@ -1,0 +1,79 @@
+name: Deploy CloudStack
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+env:
+  AWS_REGION:          ap-south-1
+  S3_BUCKET:           ${{ secrets.DEPLOY_BUCKET }}
+  CODEDEPLOY_APP:      CloudStack
+  CODEDEPLOY_GROUP:    CloudStack-DeploymentGroup
+
+jobs:
+  # ── Job 1: Test ──────────────────────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r app/requirements.txt
+          pip install pytest
+
+      - name: Lint check
+        run: python -m py_compile app/app.py && echo "Syntax OK"
+
+  # ── Job 2: Package & Deploy ───────────────────────────────────────────────────
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Package artefact
+        run: |
+          zip -r deploy.zip app/ scripts/ appspec.yml
+          echo "Artefact size: $(du -sh deploy.zip | cut -f1)"
+
+      - name: Upload to S3
+        run: |
+          KEY="deployments/${{ github.sha }}.zip"
+          aws s3 cp deploy.zip s3://${{ env.S3_BUCKET }}/$KEY
+          echo "S3_KEY=$KEY" >> $GITHUB_ENV
+
+      - name: Create CodeDeploy deployment
+        id: deploy
+        run: |
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name ${{ env.CODEDEPLOY_APP }} \
+            --deployment-group-name ${{ env.CODEDEPLOY_GROUP }} \
+            --s3-location bucket=${{ env.S3_BUCKET }},key=${{ env.S3_KEY }},bundleType=zip \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --description "Commit ${{ github.sha }} by ${{ github.actor }}" \
+            --query 'deploymentId' --output text)
+          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_ENV
+          echo "Deployment ID: $DEPLOYMENT_ID"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for $DEPLOYMENT_ID ..."
+          aws deploy wait deployment-successful \
+            --deployment-id $DEPLOYMENT_ID
+          echo "✅ Deployment successful."

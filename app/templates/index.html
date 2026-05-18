@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudStack — 3-Tier Platform</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #111118;
+      --border:    #1e1e2e;
+      --muted:     #2a2a3e;
+      --text:      #e8e8f0;
+      --dim:       #6b6b8a;
+      --accent:    #7c6af7;
+      --accent2:   #5bd4a4;
+      --accent3:   #f7a76c;
+      --danger:    #f76c6c;
+      --mono:      'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      --sans:      'Inter', system-ui, -apple-system, sans-serif;
+      --radius:    8px;
+      --radius-lg: 14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Typography ───────────────────────────────────────────────────────── */
+    h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.5px; }
+    h2 { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
+         text-transform: uppercase; color: var(--dim); }
+    code { font-family: var(--mono); font-size: 0.82rem; }
+
+    /* ── Layout ───────────────────────────────────────────────────────────── */
+    .wrapper {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Top Bar ──────────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .logo-text { font-weight: 700; font-size: 1rem; }
+    .logo-sub  { font-size: 0.7rem; color: var(--dim); font-weight: 400; }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      color: var(--dim);
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 6px var(--accent2);
+      animation: pulse 2s infinite;
+    }
+    .dot.red { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── Main grid ────────────────────────────────────────────────────────── */
+    main { padding: 32px 0 64px; }
+
+    .grid-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .grid-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+    }
+    .card-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 10px;
+    }
+    .card-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .card-sub {
+      font-size: 0.75rem;
+      color: var(--dim);
+      margin-top: 6px;
+    }
+
+    /* ── Accent colours on cards ─────────────────────────────────────────── */
+    .accent-purple .card-value { color: var(--accent); }
+    .accent-green  .card-value { color: var(--accent2); }
+    .accent-orange .card-value { color: var(--accent3); }
+
+    /* ── Instance info card ───────────────────────────────────────────────── */
+    .info-card { grid-column: span 2; }
+
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 24px;
+      margin-top: 14px;
+    }
+    .kv-item {}
+    .kv-key {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 3px;
+    }
+    .kv-val {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--text);
+      background: var(--muted);
+      padding: 5px 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kv-val.ok     { border-color: rgba(91,212,164,0.3); color: var(--accent2); }
+    .kv-val.error  { border-color: rgba(247,108,108,0.3); color: var(--danger); }
+
+    /* ── Architecture card ────────────────────────────────────────────────── */
+    .arch-card { grid-column: span 1; }
+
+    .arch-diagram {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .arch-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .arch-box {
+      flex: 1;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .arch-box.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(124,106,247,0.08);
+      box-shadow: 0 0 0 1px rgba(124,106,247,0.2);
+    }
+    .arch-arrow {
+      color: var(--dim);
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .arch-label {
+      font-size: 0.62rem;
+      color: var(--dim);
+      width: 80px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Visitors table ───────────────────────────────────────────────────── */
+    .visitors-card { grid-column: span 2; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 0.8rem;
+    }
+    thead th {
+      text-align: left;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      padding: 0 12px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--muted); }
+    tbody td {
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--dim);
+    }
+    tbody td:first-child { color: var(--text); }
+    .empty-row td {
+      text-align: center;
+      padding: 20px;
+      color: var(--dim);
+      font-family: var(--sans);
+      font-style: italic;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--dim);
+    }
+    .footer-right { font-family: var(--mono); }
+
+    /* ── Responsive ───────────────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .grid-top    { grid-template-columns: 1fr; }
+      .grid-bottom { grid-template-columns: 1fr; }
+      .info-card   { grid-column: span 1; }
+      .visitors-card { grid-column: span 1; }
+      .kv-grid     { grid-template-columns: 1fr; }
+    }
+  </style>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="wrapper">
+    <div class="top-bar">
+      <div class="logo">
+        <div class="logo-icon">☁</div>
+        <div>
+          <div class="logo-text">CloudStack</div>
+          <div class="logo-sub">3-Tier Scalable Web Platform · AWS</div>
+        </div>
+      </div>
+      <div class="status-pill">
+        <div class="dot {% if not db_ok %}red{% endif %}"></div>
+        {% if db_ok %}All systems operational{% else %}DB unreachable{% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<main>
+  <div class="wrapper">
+
+    <!-- Row 1: stat cards -->
+    <div class="grid-top">
+
+      <div class="card accent-purple">
+        <div class="card-label">Total Visits</div>
+        <div class="card-value">{{ total }}</div>
+        <div class="card-sub">All time, across all instances</div>
+      </div>
+
+      <div class="card accent-green">
+        <div class="card-label">DB Status</div>
+        <div class="card-value" style="font-size:1.3rem; padding-top:6px;">
+          {% if db_ok %}● Online{% else %}● Offline{% endif %}
+        </div>
+        <div class="card-sub">Amazon RDS Multi-AZ MySQL 8.0</div>
+      </div>
+
+      <div class="card accent-orange">
+        <div class="card-label">Server Time</div>
+        <div class="card-value" style="font-size:1rem; padding-top:8px; font-family:var(--mono);">{{ now }}</div>
+        <div class="card-sub">UTC — application tier clock</div>
+      </div>
+
+    </div>
+
+    <!-- Row 2 -->
+    <div class="grid-bottom">
+
+      <!-- Instance metadata -->
+      <div class="card info-card">
+        <div class="card-label">Instance Metadata</div>
+        <div class="kv-grid">
+          <div class="kv-item">
+            <div class="kv-key">Hostname</div>
+            <div class="kv-val">{{ hostname }}</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Availability Zone</div>
+            <div class="kv-val">{{ az }}</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Region</div>
+            <div class="kv-val">{{ region }}</div>
+          </div>
+          <div class="kv-item">
+            <div class="kv-key">Database</div>
+            <div class="kv-val {% if db_ok %}ok{% else %}error{% endif %}">
+              {% if db_ok %}Connected · RDS MySQL 8.0{% else %}Connection failed{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Architecture diagram -->
+      <div class="card arch-card">
+        <div class="card-label">Live Architecture</div>
+        <div class="arch-diagram">
+
+          <div class="arch-row">
+            <div class="arch-label">Internet</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box">Client Browser</div>
+          </div>
+
+          <div class="arch-row" style="padding-left:88px;">
+            <div class="arch-arrow" style="transform:rotate(90deg);">→</div>
+          </div>
+
+          <div class="arch-row">
+            <div class="arch-label">Public Subnet</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box">ALB (HTTPS)</div>
+          </div>
+
+          <div class="arch-row" style="padding-left:88px;">
+            <div class="arch-arrow" style="transform:rotate(90deg);">→</div>
+          </div>
+
+          <div class="arch-row">
+            <div class="arch-label">Private Subnet</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box active">EC2 · {{ hostname[:12] }}…</div>
+          </div>
+
+          <div class="arch-row" style="padding-left:88px;">
+            <div class="arch-arrow" style="transform:rotate(90deg);">→</div>
+          </div>
+
+          <div class="arch-row">
+            <div class="arch-label">DB Subnet</div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box {% if db_ok %}active{% endif %}" style="{% if db_ok %}border-color:var(--accent2);color:var(--accent2);background:rgba(91,212,164,0.06);{% endif %}">
+              RDS MySQL · {% if db_ok %}Primary{% else %}Offline{% endif %}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Row 3: recent visitors -->
+    <div style="margin-top:16px;">
+      <div class="card visitors-card">
+        <div class="card-label">Recent Visitors</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>IP Address</th>
+              <th>Visited At (UTC)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if recent %}
+              {% for v in recent %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ v.ip_address }}</td>
+                <td>{{ v.visited_at }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr class="empty-row">
+                <td colspan="3">No visits recorded yet — or database unavailable</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /wrapper -->
+</main>
+
+<!-- ── Footer ───────────────────────────────────────────────────────────────── -->
+<footer>
+  <div class="wrapper">
+    <div class="footer-inner">
+      <span>Cloud-Native 3-Tier Platform · Jamia Millia Islamia · MCA Project 2026</span>
+      <span class="footer-right">ap-south-1 · {{ hostname }}</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
