@@ -7,6 +7,8 @@ User=ec2-user
 WorkingDirectory=/opt/app
 Environment="FLASK_ENV=production"
 Environment="AWS_REGION=ap-south-1"
+Environment="DB_SECRET_NAME=prod/db/mysql-credentials"
+Environment="AWS_AZ=ap-south-1a"
 ExecStart=/opt/app/venv/bin/gunicorn -c /opt/app/gunicorn.conf.py app:app
 Restart=always
 RestartSec=5
