@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}CloudStack{% endblock %} — AWS 3-Tier Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #F8F7F4;
+      --surface:   #FFFFFF;
+      --border:    #E8E6E1;
+      --border2:   #D4D0C8;
+      --text:      #1A1917;
+      --muted:     #6B6860;
+      --faint:     #9B9890;
+      --blue:      #1A73E8;
+      --blue-soft: #EBF2FD;
+      --green:     #1E8C5A;
+      --green-soft:#E6F4EE;
+      --amber:     #B5620A;
+      --amber-soft:#FEF3E2;
+      --red:       #C5221F;
+      --red-soft:  #FCE8E6;
+      --ink:       #1A1917;
+      --mono:      'DM Mono', monospace;
+      --sans:      'DM Sans', sans-serif;
+      --serif:     'Fraunces', serif;
+      --r:         6px;
+      --r2:        12px;
+      --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow2:   0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    html { scroll-behavior: smooth; font-size: 15px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(248,247,244,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1160px; margin: 0 auto;
+      padding: 0 28px;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text);
+    }
+    .nav-logo {
+      width: 30px; height: 30px;
+      background: var(--ink);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-logo svg { width: 16px; height: 16px; fill: white; }
+    .nav-wordmark { font-family: var(--serif); font-weight: 600; font-size: 1.05rem; letter-spacing: -0.3px; }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--r);
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-links a:hover { background: var(--border); color: var(--text); }
+    .nav-links a.active { background: var(--ink); color: white; }
+    .nav-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.75rem; color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .dot.green { background: var(--green); box-shadow: 0 0 0 2px var(--green-soft); }
+    .dot.red   { background: var(--red);   box-shadow: 0 0 0 2px var(--red-soft); }
+    .dot.pulse { animation: pulse 2.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ── Page wrapper ─────────────────────────────────────────────────────── */
+    .page { max-width: 1160px; margin: 0 auto; padding: 40px 28px 80px; }
+
+    /* ── Page header ──────────────────────────────────────────────────────── */
+    .page-header { margin-bottom: 36px; }
+    .page-eyebrow {
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 6px;
+    }
+    .page-title {
+      font-family: var(--serif);
+      font-size: 2rem; font-weight: 600;
+      letter-spacing: -0.5px; line-height: 1.2;
+      color: var(--ink);
+    }
+    .page-subtitle {
+      font-size: 0.9rem; color: var(--muted);
+      margin-top: 6px; max-width: 520px;
+    }
+
+    /* ── Cards ────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .card-label {
+      font-size: 0.7rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--faint); margin-bottom: 10px;
+    }
+    .card-value {
+      font-family: var(--serif);
+      font-size: 2.6rem; font-weight: 600;
+      letter-spacing: -1px; line-height: 1;
+      color: var(--ink);
+    }
+    .card-sub { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+
+    /* ── Grids ────────────────────────────────────────────────────────────── */
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .col-span-2 { grid-column: span 2; }
+
+    /* ── Badge ────────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.72rem; font-weight: 600;
+      padding: 3px 9px; border-radius: 999px;
+    }
+    .badge-green { background: var(--green-soft); color: var(--green); }
+    .badge-blue  { background: var(--blue-soft);  color: var(--blue); }
+    .badge-amber { background: var(--amber-soft); color: var(--amber); }
+    .badge-red   { background: var(--red-soft);   color: var(--red); }
+
+    /* ── KV row ───────────────────────────────────────────────────────────── */
+    .kv { display: flex; flex-direction: column; gap: 3px; }
+    .kv-key { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+    .kv-val { font-family: var(--mono); font-size: 0.82rem; color: var(--text); }
+
+    /* ── Table ────────────────────────────────────────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .tbl thead th {
+      text-align: left; padding: 0 16px 10px;
+      font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--faint);
+      border-bottom: 1px solid var(--border);
+    }
+    .tbl tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+    .tbl tbody tr:last-child { border-bottom: none; }
+    .tbl tbody tr:hover { background: var(--bg); }
+    .tbl tbody td { padding: 11px 16px; color: var(--muted); }
+    .tbl tbody td:first-child { color: var(--text); font-family: var(--mono); font-size: 0.79rem; }
+
+    /* ── Section title ────────────────────────────────────────────────────── */
+    .section-title {
+      font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--faint); margin-bottom: 14px;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 28px;
+      margin-top: 40px;
+    }
+    .footer-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.75rem; color: var(--faint);
+    }
+    .footer-right { font-family: var(--mono); }
+
+    /* ── Animations ───────────────────────────────────────────────────────── */
+    .fade-in { animation: fadeIn 0.4s ease both; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in-1 { animation-delay: 0.05s; }
+    .fade-in-2 { animation-delay: 0.10s; }
+    .fade-in-3 { animation-delay: 0.15s; }
+    .fade-in-4 { animation-delay: 0.20s; }
+    .fade-in-5 { animation-delay: 0.25s; }
+
+    @media(max-width:720px){
+      .grid-3,.grid-2{grid-template-columns:1fr;}
+      .col-span-2{grid-column:span 1;}
+      .nav-links{display:none;}
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="/">
+      <div class="nav-logo">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22" fill="none" stroke="white" stroke-width="2"/></svg>
+      </div>
+      <span class="nav-wordmark">CloudStack</span>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
+      <a href="/architecture" class="{% if request.endpoint == 'architecture' %}active{% endif %}">Architecture</a>
+      <a href="/infrastructure" class="{% if request.endpoint == 'infrastructure' %}active{% endif %}">Infrastructure</a>
+    </div>
+    <div class="nav-status">
+      <div class="dot {% if db_ok %}green pulse{% else %}red{% endif %}"></div>
+      {% if db_ok %}Operational{% else %}DB Offline{% endif %}
+    </div>
+  </div>
+</nav>
+
+{% block body %}{% endblock %}
+
+<footer>
+  <div class="footer-inner">
+    <span>CloudStack · MCA Major Project · Jamia Millia Islamia · 2026</span>
+    <span class="footer-right">{{ region }} · {{ hostname[:24] }}</span>
+  </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

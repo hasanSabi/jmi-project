@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Architecture{% endblock %}
+
+{% block body %}
+<div class="page">
+
+  <div class="page-header fade-in">
+    <div class="page-eyebrow">System Design</div>
+    <h1 class="page-title">Architecture Overview</h1>
+    <p class="page-subtitle">Cloud-Native 3-Tier platform on AWS ap-south-1, built with the Well-Architected Framework across two Availability Zones.</p>
+  </div>
+
+  <!-- Architecture diagram -->
+  <div class="card fade-in fade-in-1" style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div class="section-title" style="margin-bottom:0;">Network Diagram — VPC 10.0.0.0/16</div>
+      <span class="badge badge-blue">ap-south-1 · Mumbai</span>
+    </div>
+
+    <!-- SVG Architecture Diagram -->
+    <svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:'DM Sans',sans-serif;">
+
+      <!-- Background: Internet zone -->
+      <rect x="0" y="0" width="900" height="480" fill="#F8F7F4" rx="8"/>
+
+      <!-- VPC box -->
+      <rect x="20" y="70" width="860" height="390" fill="none" stroke="#D4D0C8" stroke-width="1.5" rx="8" stroke-dasharray="6,3"/>
+      <text x="36" y="62" font-size="10" fill="#9B9890" font-weight="600" letter-spacing="0.08em">VPC — 10.0.0.0/16</text>
+
+      <!-- AZ-1a column background -->
+      <rect x="40" y="90" width="390" height="355" fill="#EBF2FD" rx="6" opacity="0.5"/>
+      <text x="56" y="112" font-size="9" fill="#1A73E8" font-weight="600" letter-spacing="0.1em">AVAILABILITY ZONE · ap-south-1a</text>
+
+      <!-- AZ-1b column background -->
+      <rect x="460" y="90" width="390" height="355" fill="#E6F4EE" rx="6" opacity="0.5"/>
+      <text x="476" y="112" font-size="9" fill="#1E8C5A" font-weight="600" letter-spacing="0.1em">AVAILABILITY ZONE · ap-south-1b</text>
+
+      <!-- Internet & User -->
+      <circle cx="450" cy="30" r="16" fill="#1A1917"/>
+      <text x="450" y="34" font-size="11" fill="white" text-anchor="middle">🌐</text>
+      <text x="450" y="56" font-size="10" fill="#6B6860" text-anchor="middle">Internet Users</text>
+      <line x1="450" y1="46" x2="450" y2="70" stroke="#D4D0C8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- ALB -->
+      <rect x="290" y="125" width="320" height="54" fill="white" stroke="#1A73E8" stroke-width="1.5" rx="8"/>
+      <text x="330" y="147" font-size="10" font-weight="600" fill="#1A1917">Application Load Balancer</text>
+      <text x="330" y="162" font-size="9" fill="#6B6860">HTTP/80 · Listener · Target Group · Health /health</text>
+      <rect x="303" y="128" width="20" height="20" fill="#1A73E8" rx="3"/>
+      <text x="313" y="143" font-size="10" fill="white" text-anchor="middle">⚖</text>
+
+      <!-- Public subnet labels -->
+      <rect x="56" y="122" width="200" height="54" fill="white" stroke="#D4D0C8" stroke-width="1" rx="6"/>
+      <text x="72" y="141" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">PUBLIC SUBNET</text>
+      <text x="72" y="156" font-size="9" fill="#6B6860">10.0.1.0/24</text>
+      <text x="72" y="169" font-size="9" fill="#6B6860">NAT Gateway · EIP</text>
+
+      <rect x="660" y="122" width="172" height="54" fill="white" stroke="#D4D0C8" stroke-width="1" rx="6"/>
+      <text x="676" y="141" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">PUBLIC SUBNET</text>
+      <text x="676" y="156" font-size="9" fill="#6B6860">10.0.2.0/24</text>
+
+      <!-- Arrow ALB to EC2 -->
+      <line x1="360" y1="179" x2="180" y2="235" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowBlue)"/>
+      <line x1="540" y1="179" x2="720" y2="235" stroke="#1A73E8" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowBlue)"/>
+
+      <!-- EC2 AZ-1a -->
+      <rect x="56" y="235" width="354" height="80" fill="white" stroke="#D4D0C8" stroke-width="1" rx="8"/>
+      <text x="72" y="252" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">PRIVATE SUBNET · 10.0.3.0/24</text>
+      <rect x="72" y="260" width="150" height="42" fill="#F8F7F4" stroke="#E8E6E1" stroke-width="1" rx="6"/>
+      <text x="88" y="276" font-size="9" font-weight="600" fill="#1A1917">EC2 Instance</text>
+      <text x="88" y="289" font-size="8" fill="#6B6860">Flask · Gunicorn · t3.micro</text>
+      <text x="88" y="299" font-size="8" fill="#6B6860">app-sg · SSM Agent</text>
+      <rect x="232" y="260" width="150" height="42" fill="#EBF2FD" stroke="#1A73E8" stroke-width="1" rx="6"/>
+      <text x="248" y="276" font-size="9" font-weight="600" fill="#1A73E8">EC2 Instance</text>
+      <text x="248" y="289" font-size="8" fill="#1A73E8">← This instance</text>
+      <text x="248" y="299" font-size="8" fill="#1A73E8">Serving request</text>
+
+      <!-- EC2 AZ-1b -->
+      <rect x="476" y="235" width="354" height="80" fill="white" stroke="#D4D0C8" stroke-width="1" rx="8"/>
+      <text x="492" y="252" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">PRIVATE SUBNET · 10.0.4.0/24</text>
+      <rect x="492" y="260" width="150" height="42" fill="#F8F7F4" stroke="#E8E6E1" stroke-width="1" rx="6"/>
+      <text x="508" y="276" font-size="9" font-weight="600" fill="#1A1917">EC2 Instance</text>
+      <text x="508" y="289" font-size="8" fill="#6B6860">Flask · Gunicorn · t3.micro</text>
+      <text x="508" y="299" font-size="8" fill="#6B6860">app-sg · SSM Agent</text>
+      <rect x="652" y="260" width="150" height="42" fill="#F8F7F4" stroke="#E8E6E1" stroke-width="1" rx="6"/>
+      <text x="668" y="276" font-size="9" font-weight="600" fill="#1A1917">EC2 Instance</text>
+      <text x="668" y="289" font-size="8" fill="#6B6860">Flask · Gunicorn · t3.micro</text>
+      <text x="668" y="299" font-size="8" fill="#6B6860">app-sg · SSM Agent</text>
+
+      <!-- ASG label -->
+      <rect x="56" y="325" width="774" height="22" fill="none" stroke="#D4D0C8" stroke-width="1" rx="4" stroke-dasharray="3,2"/>
+      <text x="50%" y="340" font-size="8.5" fill="#9B9890" text-anchor="middle" font-weight="600" letter-spacing="0.08em">AUTO SCALING GROUP — min:2  desired:2  max:6 — Target Tracking CPU 70%</text>
+
+      <!-- Arrows EC2 → RDS -->
+      <line x1="235" y1="315" x2="235" y2="375" stroke="#1E8C5A" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+      <line x1="665" y1="315" x2="665" y2="375" stroke="#1E8C5A" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+
+      <!-- RDS AZ-1a -->
+      <rect x="56" y="375" width="354" height="60" fill="white" stroke="#1E8C5A" stroke-width="1.5" rx="8"/>
+      <text x="72" y="393" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">DB SUBNET · 10.0.5.0/24</text>
+      <text x="72" y="410" font-size="10" font-weight="600" fill="#1A1917">RDS MySQL 8.0 — Primary</text>
+      <text x="72" y="424" font-size="9" fill="#6B6860">db.t3.micro · 20 GiB gp2 · rds-sg</text>
+
+      <!-- RDS AZ-1b -->
+      <rect x="476" y="375" width="354" height="60" fill="white" stroke="#D4D0C8" stroke-width="1.5" rx="8" stroke-dasharray="5,3"/>
+      <text x="492" y="393" font-size="9" fill="#9B9890" font-weight="600" letter-spacing="0.06em">DB SUBNET · 10.0.6.0/24</text>
+      <text x="492" y="410" font-size="10" font-weight="600" fill="#6B6860">RDS MySQL 8.0 — Standby</text>
+      <text x="492" y="424" font-size="9" fill="#6B6860">Synchronous replication · Auto failover</text>
+
+      <!-- Sync replication arrow -->
+      <line x1="410" y1="405" x2="476" y2="405" stroke="#1E8C5A" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+      <text x="443" y="400" font-size="8" fill="#1E8C5A" text-anchor="middle" font-weight="600">SYNC</text>
+
+      <!-- Arrow markers -->
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#D4D0C8"/>
+        </marker>
+        <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#1A73E8"/>
+        </marker>
+        <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#1E8C5A"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Design decisions grid -->
+  <div class="grid-3" style="margin-bottom:16px;">
+
+    {% set decisions = [
+      ("Network Isolation", "blue", "VPC spans 10.0.0.0/16 with 6 dedicated /24 subnets across two AZs — Public, Private, and DB tiers are fully isolated with no cross-tier direct routing."),
+      ("Zero-Trust Access", "green", "No inbound port 22. All EC2 access via AWS SSM Session Manager — authenticated by IAM, logged to CloudWatch, audited by CloudTrail."),
+      ("Elastic Compute", "blue", "Auto Scaling Group maintains min=2 instances across both AZs. Target Tracking scaling policy keeps CPU at 70%, scaling out in 60s cooldown."),
+      ("Managed Database", "green", "Amazon RDS MySQL 8.0 with Multi-AZ enabled. Synchronous replication to standby. Automatic failover in 60–120s. Zero data loss (RPO=0)."),
+      ("Secure Secrets", "blue", "Database credentials stored exclusively in AWS Secrets Manager. Application fetches via SDK on startup — no passwords in code or env vars."),
+      ("Full Observability", "amber", "CloudWatch alarms on CPU, 5XX, RDS connections. CloudTrail records all API calls. VPC Flow Logs capture all network traffic metadata."),
+    ] %}
+    {% for title, color, desc in decisions %}
+    <div class="card fade-in fade-in-2">
+      <div style="margin-bottom:10px;"><span class="badge badge-{{ color }}">{{ title }}</span></div>
+      <p style="font-size:0.8rem;color:var(--muted);line-height:1.55;">{{ desc }}</p>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- Traffic flow + Security model -->
+  <div class="grid-2">
+
+    <div class="card fade-in fade-in-3">
+      <div class="section-title">Request Flow</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% set steps = [
+          ("1", "Client Browser", "HTTPS/HTTP request from internet", "blue"),
+          ("2", "Internet Gateway", "Routes traffic into the VPC public subnet", "blue"),
+          ("3", "Application Load Balancer", "Layer-7 routing · health-check filtering · forwards to Target Group", "blue"),
+          ("4", "EC2 Instance (ASG)", "Flask app processes request · queries RDS", "blue"),
+          ("5", "Amazon RDS MySQL", "Query executed · response returned up the chain", "green"),
+        ] %}
+        {% for num, name, detail, color in steps %}
+        <div style="display:flex;gap:14px;padding:12px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <div style="width:24px;height:24px;border-radius:50%;background:var(--{{ color }}-soft);color:var(--{{ color }});font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">{{ num }}</div>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--ink);">{{ name }}</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">{{ detail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card fade-in fade-in-4">
+      <div class="section-title">Security Group Rules</div>
+      <table class="tbl">
+        <thead><tr><th>Group</th><th>Direction</th><th>Port</th><th>Source</th></tr></thead>
+        <tbody>
+          {% set rules = [
+            ("alb-sg", "In", "80", "0.0.0.0/0"),
+            ("app-sg", "In", "5000", "alb-sg"),
+            ("app-sg", "Out", "3306", "rds-sg"),
+            ("app-sg", "Out", "443", "0.0.0.0/0"),
+            ("rds-sg", "In", "3306", "app-sg"),
+          ] %}
+          {% for sg, dir, port, src in rules %}
+          <tr>
+            <td style="font-size:0.75rem;">{{ sg }}</td>
+            <td><span class="badge {% if dir == 'In' %}badge-blue{% else %}badge-amber{% endif %}" style="font-size:0.68rem;">{{ dir }}</span></td>
+            <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text);">{{ port }}</td>
+            <td style="font-size:0.74rem;">{{ src }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <hr class="divider">
+      <div class="section-title">IAM Policies on EC2 Role</div>
+      {% set policies = [
+        ("AmazonSSMManagedInstanceCore", "SSM Session Manager access"),
+        ("CloudWatchAgentServerPolicy", "Publish custom metrics & logs"),
+        ("SecretsManagerRead (inline)", "GetSecretValue on prod/db/* only"),
+        ("AmazonEC2RoleforAWSCodeDeploy", "Receive CodeDeploy deployments"),
+      ] %}
+      {% for policy, detail in policies %}
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <span class="badge badge-green" style="font-size:0.65rem;flex-shrink:0;margin-top:1px;">✓</span>
+        <div>
+          <div style="font-size:0.78rem;font-weight:600;color:var(--ink);font-family:var(--mono);">{{ policy }}</div>
+          <div style="font-size:0.73rem;color:var(--muted);">{{ detail }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

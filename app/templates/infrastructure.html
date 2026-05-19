@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Infrastructure{% endblock %}
+
+{% block body %}
+<div class="page">
+
+  <div class="page-header fade-in">
+    <div class="page-eyebrow">Stack Details</div>
+    <h1 class="page-title">Infrastructure & Services</h1>
+    <p class="page-subtitle">Every AWS service, configuration parameter, and design decision powering this deployment.</p>
+  </div>
+
+  <!-- AWS Services table -->
+  <div class="card fade-in fade-in-1" style="margin-bottom:16px;">
+    <div class="section-title">AWS Services in Use</div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Service</th>
+          <th>Tier</th>
+          <th>Configuration</th>
+          <th>Purpose</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set services = [
+          ("Amazon VPC", "Network", "10.0.0.0/16 · 6 subnets · 2 AZs", "Network isolation and routing", "green", "Active"),
+          ("Internet Gateway", "Network", "Attached to VPC", "Inbound/outbound internet for public subnets", "green", "Active"),
+          ("NAT Gateway", "Network", "ap-south-1a · Elastic IP", "Outbound-only internet for private subnets", "green", "Active"),
+          ("Application Load Balancer", "Presentation", "HTTP/80 · internet-facing · 2 AZs", "Layer-7 load balancing and health filtering", "green", "Active"),
+          ("EC2 Auto Scaling Group", "Application", "min=2 · desired=2 · max=6 · t3.micro", "Elastic compute with automatic recovery", "green", "Active"),
+          ("Amazon RDS MySQL 8.0", "Data", "db.t3.micro · Multi-AZ · 20 GiB gp2", "Managed relational database with auto-failover", "green", "Active"),
+          ("AWS Secrets Manager", "Security", "prod/db/mysql-credentials · auto-rotation", "Secure credential storage", "green", "Active"),
+          ("AWS SSM Session Manager", "Security", "No port 22 · IAM-controlled · logged", "Secure instance access without SSH", "green", "Active"),
+          ("Amazon CloudWatch", "Observability", "Custom metrics · Alarms · Log groups", "Metrics, logging, and alerting", "green", "Active"),
+          ("AWS CloudTrail", "Observability", "Multi-region trail · S3 delivery", "API audit logging across all services", "green", "Active"),
+          ("VPC Flow Logs", "Observability", "All traffic · CloudWatch Logs", "Network-level traffic metadata capture", "green", "Active"),
+          ("AWS CodeDeploy", "CI/CD", "OneAtATime · auto-rollback on failure", "Zero-downtime application deployments", "green", "Active"),
+          ("Amazon S3", "CI/CD", "Deploy artefact bucket · versioned", "Deployment artefact storage", "green", "Active"),
+          ("IAM OIDC Provider", "Security", "token.actions.githubusercontent.com", "GitHub Actions federated auth (no long-lived keys)", "green", "Active"),
+        ] %}
+        {% for name, tier, config, purpose, color, status in services %}
+        <tr>
+          <td style="font-weight:600;font-size:0.8rem;">{{ name }}</td>
+          <td><span class="badge badge-blue" style="font-size:0.67rem;">{{ tier }}</span></td>
+          <td style="font-family:var(--mono);font-size:0.72rem;color:var(--muted);max-width:220px;">{{ config }}</td>
+          <td style="font-size:0.78rem;color:var(--muted);">{{ purpose }}</td>
+          <td><span class="badge badge-{{ color }}" style="font-size:0.67rem;">{{ status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CI/CD pipeline + Network layout side by side -->
+  <div class="grid-2" style="margin-bottom:16px;">
+
+    <!-- CI/CD -->
+    <div class="card fade-in fade-in-2">
+      <div class="section-title">CI/CD Pipeline — GitHub Actions</div>
+
+      <div style="position:relative;">
+        {% set stages = [
+          ("Push to main", "Developer commits code to the main branch", "blue", "git push"),
+          ("Test Job", "Python syntax check + dependency install on ubuntu-latest runner", "blue", "py_compile"),
+          ("Package Job", "ZIP artefact created and uploaded to S3 deployment bucket", "blue", "s3 cp"),
+          ("Deploy Job", "AWS CodeDeploy creates deployment via OIDC-authenticated CLI call", "blue", "create-deployment"),
+          ("Lifecycle Hooks", "BeforeInstall → AfterInstall → ApplicationStart → ValidateService", "amber", "appspec.yml"),
+          ("Verify Job", "Poll deployment status · fail workflow if CodeDeploy fails → auto-rollback", "green", "deploy wait"),
+        ] %}
+        {% for title, detail, color, cmd in stages %}
+        <div style="display:flex;gap:14px;padding:12px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
+            <div style="width:26px;height:26px;border-radius:50%;background:var(--{{ color }}-soft);color:var(--{{ color }});font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ loop.index }}</div>
+            {% if not loop.last %}<div style="width:1px;height:100%;min-height:14px;background:var(--border);margin-top:4px;flex:1;"></div>{% endif %}
+          </div>
+          <div style="flex:1;padding-bottom:{% if not loop.last %}8px{% else %}0{% endif %};">
+            <div style="font-size:0.82rem;font-weight:600;color:var(--ink);">{{ title }}</div>
+            <div style="font-size:0.74rem;color:var(--muted);margin-top:3px;">{{ detail }}</div>
+            <code style="font-size:0.68rem;background:var(--bg);border:1px solid var(--border);padding:2px 7px;border-radius:4px;color:var(--blue);display:inline-block;margin-top:5px;">{{ cmd }}</code>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Network layout -->
+    <div class="card fade-in fade-in-3">
+      <div class="section-title">Network Layout</div>
+      <table class="tbl">
+        <thead><tr><th>Subnet</th><th>CIDR</th><th>AZ</th><th>Route</th></tr></thead>
+        <tbody>
+          {% set subnets = [
+            ("public-subnet-1a",  "10.0.1.0/24", "1a", "IGW"),
+            ("public-subnet-1b",  "10.0.2.0/24", "1b", "IGW"),
+            ("private-subnet-1a", "10.0.3.0/24", "1a", "NAT GW"),
+            ("private-subnet-1b", "10.0.4.0/24", "1b", "NAT GW"),
+            ("db-subnet-1a",      "10.0.5.0/24", "1a", "Local"),
+            ("db-subnet-1b",      "10.0.6.0/24", "1b", "Local"),
+          ] %}
+          {% for name, cidr, az2, route in subnets %}
+          <tr>
+            <td style="font-size:0.74rem;">{{ name }}</td>
+            <td style="font-family:var(--mono);font-size:0.73rem;color:var(--text);">{{ cidr }}</td>
+            <td><span class="badge {% if az2 == '1a' %}badge-blue{% else %}badge-green{% endif %}" style="font-size:0.65rem;">{{ az2 }}</span></td>
+            <td style="font-size:0.74rem;">{{ route }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <hr class="divider">
+      <div class="section-title">RDS Configuration</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        {% set rds_params = [
+          ("Engine", "MySQL 8.0"),
+          ("Instance Class", "db.t3.micro"),
+          ("Deployment", "Multi-AZ"),
+          ("Storage", "20 GiB gp2"),
+          ("Backup Retention", "0 days"),
+          ("Encryption", "AWS KMS"),
+          ("Failover Time", "60–120 seconds"),
+          ("RPO", "Zero (sync replication)"),
+        ] %}
+        {% for key, val in rds_params %}
+        <div class="kv">
+          <div class="kv-key">{{ key }}</div>
+          <div class="kv-val" style="font-size:0.78rem;">{{ val }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tech Stack + Live stats -->
+  <div class="grid-2" style="margin-bottom:16px;">
+
+    <div class="card fade-in fade-in-3">
+      <div class="section-title">Application Stack</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% set stack = [
+          ("Python 3.11", "Runtime", "Application language", "amber"),
+          ("Flask 3.0", "Framework", "Lightweight WSGI web framework", "amber"),
+          ("Gunicorn 22", "Server", "WSGI HTTP Server · 2 sync workers · port 5000", "amber"),
+          ("PyMySQL 1.1", "Driver", "Pure-Python MySQL client library", "blue"),
+          ("Boto3 1.34", "AWS SDK", "Secrets Manager · CloudWatch · EC2 metadata", "blue"),
+          ("Amazon Linux 2023", "OS", "Base AMI · dnf package manager · SSM Agent built-in", "green"),
+          ("systemd", "Process Mgr", "cloudstack.service · auto-restart on failure · journal logging", "green"),
+        ] %}
+        {% for name, category, detail, color in stack %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+          <span class="badge badge-{{ color }}" style="font-size:0.67rem;width:90px;justify-content:center;flex-shrink:0;">{{ category }}</span>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--ink);">{{ name }}</div>
+            <div style="font-size:0.73rem;color:var(--muted);">{{ detail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card fade-in fade-in-4">
+      <div class="section-title">Live Platform Status</div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        {% set checks = [
+          ("Application Server", "Running · Gunicorn · 2 workers", "green"),
+          ("Database Connection", "Connected · RDS MySQL 8.0" if db_ok else "Offline · Check credentials", "green" if db_ok else "red"),
+          ("Load Balancer", "HTTP/80 · Listener active", "green"),
+          ("Auto Scaling Group", "min=2 · ELB health checks enabled", "green"),
+          ("SSM Session Manager", "Active · No port 22 open", "green"),
+          ("CloudWatch Agent", "Metrics publishing · mem + disk", "green"),
+        ] %}
+        {% for name, detail, color in checks %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--{{ color }}-soft);border:1px solid {% if color == 'green' %}var(--green){% elif color == 'red' %}var(--red){% else %}var(--amber){% endif %};border-radius:var(--r);opacity:0.9;">
+          <span style="font-size:1rem;">{% if color == 'green' %}✓{% elif color == 'red' %}✗{% else %}~{% endif %}</span>
+          <div>
+            <div style="font-size:0.8rem;font-weight:600;color:var(--{{ color }});">{{ name }}</div>
+            <div style="font-size:0.72rem;color:var(--muted);">{{ detail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <hr class="divider">
+      <div class="section-title">API Endpoints</div>
+      {% set endpoints = [
+        ("GET", "/", "Main dashboard — records visit"),
+        ("GET", "/health", "ALB health check · returns 200"),
+        ("GET", "/architecture", "Architecture overview page"),
+        ("GET", "/infrastructure", "Infrastructure details page"),
+        ("GET", "/api/stats", "JSON stats — totals, daily data"),
+      ] %}
+      {% for method, path, desc in endpoints %}
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;{% if not loop.last %}border-bottom:1px solid var(--border);{% endif %}">
+        <span class="badge badge-blue" style="font-size:0.65rem;width:38px;justify-content:center;flex-shrink:0;">{{ method }}</span>
+        <code style="font-size:0.76rem;color:var(--ink);font-family:var(--mono);">{{ path }}</code>
+        <span style="font-size:0.73rem;color:var(--muted);margin-left:auto;">{{ desc }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Project info banner -->
+  <div class="card fade-in fade-in-5" style="background:var(--ink);border-color:var(--ink);">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+      <div>
+        <div style="font-family:var(--serif);font-size:1.2rem;font-weight:600;color:white;margin-bottom:4px;">Cloud-Native 3-Tier Scalable Web Platform</div>
+        <div style="font-size:0.8rem;color:#9B9890;">Major Project · Master of Computer Applications (MCA) · Jamia Millia Islamia, New Delhi · 2024–2026</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-shrink:0;">
+        <div style="text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.4rem;font-weight:600;color:white;">{{ total }}</div>
+          <div style="font-size:0.7rem;color:#6B6860;margin-top:2px;">Total Visits</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.4rem;font-weight:600;color:white;">14</div>
+          <div style="font-size:0.7rem;color:#6B6860;margin-top:2px;">AWS Services</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.4rem;font-weight:600;color:white;">2</div>
+          <div style="font-size:0.7rem;color:#6B6860;margin-top:2px;">Avail. Zones</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.4rem;font-weight:600;color:white;">8%</div>
+          <div style="font-size:0.7rem;color:#6B6860;margin-top:2px;">Plagiarism</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
