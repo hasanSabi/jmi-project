@@ -100,7 +100,12 @@ def index():
 
 @app.route("/architecture")
 def architecture():
-    return render_template("architecture.html", **get_instance_meta())
+    meta = get_instance_meta()
+    try:
+        conn = get_db(); conn.close(); db_ok = True
+    except:
+        db_ok = False
+    return render_template("architecture.html", **meta, db_ok=db_ok)
 
 @app.route("/infrastructure")
 def infrastructure():
